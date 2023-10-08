@@ -19,6 +19,6 @@ check-ghc:
 regenerate-tests: Test.hs
 
 %.hs: %.ds
-	DrIFT $< > $@ 
-	
+	DrIFT $< > $@
+
 #######################################################

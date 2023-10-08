@@ -2,7 +2,7 @@
 -- |
 -- Copyright   :  (c) Joost Visser 2004
 -- License     :  LGPL
--- 
+--
 -- Maintainer  :  joost.visser@di.uminho.pt
 -- Stability   :  experimental
 -- Portability :  portable
@@ -17,16 +17,16 @@ module Data.ATerm.IO where
 import System.IO
 import System.Environment ( getArgs )
 import Data.ATerm.AbstractSyntax
-import Data.ATerm.Conversion 
+import Data.ATerm.Conversion
 import Data.ATerm.ReadWrite
 import Data.Char
 
 -----------------------------------------------------------------------------
 -- * Transformation wrapper
- 
+
 -- | Wrapper function to create a main function in the IO monad, given a
 --   program name and a monadic transformation function.
-atermIOwrap :: (ATermConvertible t, ATermConvertible a) 
+atermIOwrap :: (ATermConvertible t, ATermConvertible a)
             => ProgramName -> (t -> IO a) -> IO ()
 atermIOwrap progName mtransform
   = do args <- getArgs
@@ -35,18 +35,18 @@ atermIOwrap progName mtransform
        tin  <- return . fromATerm . dehyphenAST . readATerm $ sin
        tout <- mtransform $ tin
        sout <- return . toString (format opts) $ tout
-       writeStream (fout opts) sout 
+       writeStream (fout opts) sout
     where
       readStream "#stdin#"	= getContents
       readStream f		= readFile f
       writeStream "#stdout#"	= putStr
       writeStream f		= writeFile f
-      toString format 
-        = case format of 
+      toString format
+        = case format of
             "TEXT" -> toATermString
 	    "TAF"  -> toSharedATermString
-	    _      -> error $ "format unknown: "++"\n"++usage progName    
-	
+	    _      -> error $ "format unknown: "++"\n"++usage progName
+
 -----------------------------------------------------------------------------
 -- * Helpers
 
@@ -71,7 +71,7 @@ dehyphenAST t               = t
 dehyphenUnquoted s@('\"':_) = s
 dehyphenUnquoted s = dehyphen s
 
--- | Turn the first character into upper case.       
+-- | Turn the first character into upper case.
 headToUpper 	   ::  String -> String
 headToUpper []     = []
 headToUpper (c:cs) = (toUpper c):cs
@@ -83,7 +83,7 @@ afunCap (AList ts)      = AList (map afunCap ts)
 afunCap t               = t
 
 -----------------------------------------------------------------------------
--- * Option handling 
+-- * Option handling
 
 data OptionsATermIO
   = OptionsATermIO { fin :: String, fout :: String, format :: String }
@@ -91,11 +91,11 @@ data OptionsATermIO
 defaultOptionsATermIO :: OptionsATermIO
 defaultOptionsATermIO
   = OptionsATermIO { fin = "#stdin#", fout = "#stdout#", format = "TEXT" }
-  
+
 parseOptions :: String -> [String] -> OptionsATermIO
 parseOptions programName args
   = p args
-    where 
+    where
       p []			= defaultOptionsATermIO
       p ("-t":args)		= (p args){ format = "TEXT" }
       p ("-s":args)		= (p args){ format = "TAF" }
@@ -115,6 +115,6 @@ usage programName
 	     "  -o <fname>    name of output file   (default: stdout)",
 	     "  -t            output format is TEXT (plain text)",
 	     "  -s            output format is TAF  (textual sharing)"
-	    ]	   
-    
+	    ]
+
 -------------------------------------------------------------------------------

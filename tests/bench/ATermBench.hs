@@ -8,7 +8,7 @@ main
     where
       worker :: ATerm -> IO ATerm
       worker = return
-      
+
 instance ATermConvertible ATerm where
   toATerm = id
   fromATerm = id

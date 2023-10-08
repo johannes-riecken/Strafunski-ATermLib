@@ -2,7 +2,7 @@
 -- |
 -- Copyright   :  (c) Joost Visser 2004
 -- License     :  LGPL
--- 
+--
 -- Maintainer  :  joost.visser@di.uminho.pt
 -- Stability   :  experimental
 -- Portability :  portable
@@ -12,7 +12,7 @@
 -- supported:
 --
 --      * AT:   plain (non-shared) textual ATerms
---      
+--
 --      * TAF:  shared textual ATerms
 --
 --  The binary ATerm format (BAF) is not supported.
@@ -20,7 +20,7 @@
 --  Current limitations:
 --
 --      * BLOBS and place-holders are not supported.
---      
+--
 --      * Annotations are not supported.
 --
 -----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ readAT str@(c:cs)
                                (kids, str'') = readParenATs (dropSpaces str')
                            in (AAppl c kids, str'')
 
-readAFun ('"':str)      =  let (c,('"':str')) = spanNotQuote' str 
+readAFun ('"':str)      =  let (c,('"':str')) = spanNotQuote' str
                            in (quote c,str')
 readAFun str            =  spanAFunChar str
 
@@ -75,13 +75,13 @@ readATs' (')':str)      = ([],str)
 readATs' (']':str)      = ([],str)
 
                                                                    -- shared --
-                                                                   
+
 readTAF                 :: String -> ReadTable -> Int
                         -> (ATerm,String,ReadTable,Int)
 readTAF ('#':str) tbl l =  let (i,str') = spanAbbrevChar str
-                           in (getElementRT (deAbbrev i) tbl, 
-                               str',tbl,l+(length i)+1)    
-readTAF ('[':str) tbl l =  let (kids, str',tbl',l') 
+                           in (getElementRT (deAbbrev i) tbl,
+                               str',tbl,l+(length i)+1)
+readTAF ('[':str) tbl l =  let (kids, str',tbl',l')
                                   = readTAFs (dropSpaces str) tbl 1
                                t  = AList kids
                            in (t, str',condAddElementRT t l' tbl',l+l')
@@ -89,11 +89,11 @@ readTAF str@(c:cs) tbl l
   | isIntHead c         =  let (i,str') = span isDigit cs
                                ci       = (c:i)
                                l'       = length ci
-                               t        = AInt (read ci) 
+                               t        = AInt (read ci)
                                tbl'     = condAddElementRT t l' tbl
                            in (t,str',tbl',l+l')
   | otherwise           =  let (c,str') = readAFun str
-                               (kids, str'',tbl',l') 
+                               (kids, str'',tbl',l')
                                    = readParenTAFs (dropSpaces str') tbl 0
                                t   = AAppl c kids
                                lks = if Prelude.null kids then 0 else l'
@@ -109,7 +109,7 @@ readTAFs str tbl l              =  readTAFs1 str tbl l
 
 readTAFs1 str tbl l     =  let (t,str',tbl',l')
                                    = readTAF (dropSpaces str) tbl l
-                               (ts,str'',tbl'',l'') 
+                               (ts,str'',tbl'',l'')
                                    = readTAFs' (dropSpaces str') tbl' l'
                            in (t:ts,str'',tbl'',l'')
 
@@ -129,15 +129,15 @@ quote str               = ('"':str)++"\""
 
 spanNotQuote' []                = ([],[])
 spanNotQuote' xs@('"':xs')      = ([],xs)
-spanNotQuote' xs@('\\':'"':xs') = ('\\':'"':ys,zs) 
+spanNotQuote' xs@('\\':'"':xs') = ('\\':'"':ys,zs)
                                   where (ys,zs) = spanNotQuote' xs'
-spanNotQuote' xs@('\\':'\\':xs')= ('\\':'\\':ys,zs) 
+spanNotQuote' xs@('\\':'\\':xs')= ('\\':'\\':ys,zs)
                                   where (ys,zs) = spanNotQuote' xs'
-spanNotQuote' xs@(x:xs')        = (x:ys,zs) 
+spanNotQuote' xs@(x:xs')        = (x:ys,zs)
                                   where (ys,zs) = spanNotQuote' xs'
 
 -----------------------------------------------------------------------------
--- * From ATerm to String 
+-- * From ATerm to String
 
 -- | Write the given ATerm to non-shared textual representation (TXT format).
 writeATerm              :: ATerm -> String
@@ -158,7 +158,7 @@ writeAT (AInt i)        =  show i
 
 writeTAF                :: ATerm -> WriteTable -> (String,WriteTable)
 writeTAF t tbl          =  case getIndexWT t tbl of
-                             (Just i) -> (makeAbbrev i,tbl) 
+                             (Just i) -> (makeAbbrev i,tbl)
                              Nothing  -> (str, condAddElementWT t str tbl')
                                          where (str,tbl') = writeTAF' t tbl
 
@@ -174,7 +174,7 @@ writeTAFs (t:ts) tbl    =  let (str,tbl')   = writeTAF t tbl
                            in ((str:strs),tbl'')
 
                                                                   -- helpers --
- 
+
 writeATermAux c []      =  c
 writeATermAux c ts      =  c++(parenthesise (commaSep ts))
 
@@ -186,14 +186,14 @@ bracket str             = "["++str++"]"
 parenthesise str        = "("++str++")"
 
 -----------------------------------------------------------------------------
--- * Tables of ATerms 
+-- * Tables of ATerms
 
                                                 -- For reading (remove sharing)
 -- Using reversed List
 type ReadTable          = (Integer,[ATerm])
 emptyRT                 = (0,[])
 -- Hook to prevent expansion of productions. This is useful when reading
--- huge AsFix files. 
+-- huge AsFix files.
 getElementRT' i tbl     = case getElementRT i tbl of
                             (AAppl "prod" _) -> AAppl "#prod" []
                             t -> t
@@ -222,14 +222,14 @@ condAddElementRT t l tbl
        tbl
     --where next_abbrev = makeAbbrev (toInteger (sizeOfRT tbl)+1)
     where next_abbrev = makeAbbrev (toInteger (sizeOfRT tbl))
-    
+
 condAddElementRT' t str tbl
   = if (length next_abbrev) < (length str) then
        addElementRT t tbl
     else
        tbl
     where next_abbrev = makeAbbrev (toInteger (sizeOfRT tbl)+1)
- 
+
                                                 -- For writing (create sharing)
 -- Using FiniteMap
 type WriteTable         = FM.Map ATerm Integer
@@ -268,13 +268,13 @@ toBase64 =
   [ 'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
     'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f',
     'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
-    'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/' 
+    'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'
   ]
-  
+
 makeAbbrev i = '#':mkAbbrev i
 
 -----------------------------------------------------------------------------
--- * Helpers 
+-- * Helpers
 
 indexOf t []            =  Nothing
 indexOf t (x:xs)        =  if t==x
@@ -292,17 +292,17 @@ indexOf t (x:xs)        =  if t==x
 -- * Future work
 
 {- The code could be made more readable by introducing
-   special monads that hide the consumed String/ATerm and the 
+   special monads that hide the consumed String/ATerm and the
    table that is built during reading/writing
-   
-newtype ReadMonad t     = RM { runRM :: String -> ReadTable 
+
+newtype ReadMonad t     = RM { runRM :: String -> ReadTable
                                      -> (t,String,ReadTable) }
 instance Monad ReadMonad where
   return t = RM $ \str tbl -> (t,str,tbl)
   rm >>= f = RM $ \str tbl -> let (t,str',tbl') = runRM rm str tbl
                               in runRM (f t) str' tbl'
-                              
-  I guess this should be a combined ParserMonad and StateMonad.                       
+
+  I guess this should be a combined ParserMonad and StateMonad.
 -}
 
 -------------------------------------------------------------------------------
@@ -311,7 +311,7 @@ instance Monad ReadMonad where
 -- | Test whether reading and writing to and from shared aterm representations
 --   (TAF format) deals correctly with the bounderies of the base-64 encoding.
 testAbbrevBoundaries :: Bool
-testAbbrevBoundaries 
+testAbbrevBoundaries
   = writeSharedATerm term == shared && readATerm shared == term
   where
     term = AList $ Prelude.map AInt ([100..164]++[100..164])

@@ -40,10 +40,10 @@ The modules of this library can be used as-is, but if you want to run checks, Hu
        Import the top level module "ATermLib" into your Haskell program.
 
   3. /Provide ATermConvertible instances/:
-       Provide instances of the 'ATermConvertible' class for all the 
-       datatypes that you want to convert to\/from ATerms. You can 
+       Provide instances of the 'ATermConvertible' class for all the
+       datatypes that you want to convert to\/from ATerms. You can
        peek at Test.hs to figure out how.
-       Automatic generation of instances is supported by the 
+       Automatic generation of instances is supported by the
        DrIFT pre-compiler. See below.
 
 
@@ -53,7 +53,7 @@ The modules of this library can be used as-is, but if you want to run checks, Hu
   be used to generate instances of the ATermConvertible class
   automatically from your datatype definitions.
 
-  1. Get the Strafunski version of DrIFT from 
+  1. Get the Strafunski version of DrIFT from
        <http://www.cs.vu.nl/Strafunski/>.
 
   2. Add the following DrIFT directive to your file:
@@ -61,14 +61,14 @@ The modules of this library can be used as-is, but if you want to run checks, Hu
      @    {-! global: ATermConvertible !-} @
 
   3. Import the Haskell ATermLib into your file:
-     
+
      @    import ATermLib @
 
   4. Run DrIFT on your file.
-     
+
      @    DrIFT YourFile.hs.src > YourFile.hs @
 
-  
+
 /Authors/
 
 The Haskell ATerm Library was initiated by
@@ -82,19 +82,19 @@ Improvements were contributed by:
 
 /Links/
 
-  - Strafunski: 
+  - Strafunski:
     <http://www.cs.vu.nl/Strafunski/>
 
-  - ATerm Library for C and Java: 
+  - ATerm Library for C and Java:
     <http://www.cwi.nl/projects/MetaEnv/aterm/>
 
-  - ATerm Library for Java (alternative implementation): 
+  - ATerm Library for Java (alternative implementation):
     <http://www.loria.fr/equipes/protheo/SOFTWARES/ELAN/Toolkit/>
 
-  - XT (transformation tool bundle): 
+  - XT (transformation tool bundle):
     <http://www.program-transformation.org/xt>
 
-  - Stratego: 
+  - Stratego:
     <http://www.stratego-language.org>
 
   - JJForester:

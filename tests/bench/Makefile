@@ -62,7 +62,7 @@ bench-taf2trm:
 # For developers only:
 
 regenerate-tests: $(benchfile).taf $(benchfile).trm
-	
+
 %.taf: %
 	trm2taf -i $< -o $@
 

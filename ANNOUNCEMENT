@@ -12,8 +12,8 @@ includes the following:
 
 To enable the latter feature, you need to provide instances of the
 ATermConvertible class for all the datatypes that you want to convert
-to/from ATerms. Automatic generation of instances is supported by the 
-DrIFT-Strafunski pre-compiler (version 1.4 and upward), which is 
+to/from ATerms. Automatic generation of instances is supported by the
+DrIFT-Strafunski pre-compiler (version 1.4 and upward), which is
 available from:
 
   http://www.cs.vu.nl/Strafunski/

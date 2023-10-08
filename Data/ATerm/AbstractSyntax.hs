@@ -2,7 +2,7 @@
 -- |
 -- Copyright   :  (c) Joost Visser 2004
 -- License     :  LGPL
--- 
+--
 -- Maintainer  :  joost.visser@di.uminho.pt
 -- Stability   :  experimental
 -- Portability :  portable

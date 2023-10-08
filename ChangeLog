@@ -5,7 +5,7 @@ November 2005: Joost Visser
 2004-12-21: Joost.Visser@di.uminho.pt
   * Bumped version to 1.4.
   * Improved haddock documentation
-  * Fixed subtle of-by-1-bug that led to sporadic TAF encoding 
+  * Fixed subtle of-by-1-bug that led to sporadic TAF encoding
     and decoding errors in big files.
   * Fixed de-hyphenation problem.
 

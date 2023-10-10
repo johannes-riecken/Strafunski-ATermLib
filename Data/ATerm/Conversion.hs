@@ -33,11 +33,11 @@ class ATermConvertible t where
 -- | Auxiliary function for reporting errors.
 fromATermError :: String -> ATerm -> a
 fromATermError t u
-  = error ("Cannot convert ATerm to "++t++": "++(err u))
+  = error ("Cannot convert ATerm to "++t++": "++err u)
     where err u = case u of
 		  AAppl s _ -> '!':s
 		  AList _   -> "!AList"
-		  otherwise -> "!AInt"
+		  _ -> "!AInt"
 
 -----------------------------------------------------------------------------
 -- * Conversion of ATerms to and from Strings
@@ -124,7 +124,7 @@ instance (Integral a, ATermConvertible a)
   toATerm xy	= AAppl "Ratio" [toATerm (numerator xy),
                                  toATerm (denominator xy)]
   fromATerm (AAppl "Ratio" [x,y])
-		= (fromATerm x)%(fromATerm y)
+		= fromATerm x%fromATerm y
   fromATerm t	= fromATermError "Ratio.Ratio" t
 
 ------------------------------------------------------------------------------

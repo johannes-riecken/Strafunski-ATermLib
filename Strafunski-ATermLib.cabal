@@ -19,10 +19,9 @@ source-repository head
 library
 
   Extensions:
-    TypeSynonymInstances,
-    FlexibleInstances,
-    UndecidableInstances,
-    OverlappingInstances
+    TypeSynonymInstances
+    , FlexibleInstances
+    , UndecidableInstances
 
 
 

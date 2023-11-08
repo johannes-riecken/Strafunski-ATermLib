@@ -67,12 +67,15 @@ readATs (']':str)       =  ([],str)
 readATs str             =  readATs1 str
 
 readATs1 str            =  let (t,str')   = readAT (dropSpaces str)
-                               (ts,str'') = readATs' (dropSpaces str')
+                               (ts,str'') = case readATs' (dropSpaces str') of
+                                    Right (a,b) -> (a,b)
+                                    Left err -> error (err <> ", full str: " <> str)
                            in (t:ts,str'')
 
-readATs' (',':str)      = readATs1 (dropSpaces str)
-readATs' (')':str)      = ([],str)
-readATs' (']':str)      = ([],str)
+readATs' (',':str)      = Right $ readATs1 (dropSpaces str)
+readATs' (')':str)      = Right $ ([],str)
+readATs' (']':str)      = Right $ ([],str)
+readATs' str = Left ("Expected ',', ')', or ']' at start: " <> str)
 
                                                                    -- shared --
 

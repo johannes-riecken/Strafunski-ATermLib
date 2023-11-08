@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, DefaultSignatures, InstanceSigs, RankNTypes, ScopedTypeVariables, TypeApplications, TypeOperators #-}
+{-# LANGUAGE EmptyCase, FlexibleContexts, DefaultSignatures, InstanceSigs, RankNTypes, ScopedTypeVariables, TypeApplications, TypeOperators #-}
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   :  (c) Joost Visser 2004
@@ -35,13 +36,25 @@ class ATermConvertible t where
   toATerm = gtoATerm' . from
   -- | Convert from an ATerm.
   fromATerm :: ATerm -> t
-  default fromATerm :: (Generic t, GFromATermMaybe' (Rep t)) => ATerm -> t
-  fromATerm = to . fromJust . gfromATermMaybe'
+  default fromATerm :: (Generic t, GFromATermEither' (Rep t)) => ATerm -> t
+  fromATerm = to . errorOnLeft . gfromATermEither' where
+    errorOnLeft (Right x) = x
+    errorOnLeft (Left err) = error err
+  fromATermEither :: ATerm -> Either Error t
+  default fromATermEither :: (Generic t, GFromATermEither' (Rep t)) => ATerm -> Either Error t
+  fromATermEither = fmap to . gfromATermEither'
 
 -- | Auxiliary function for reporting errors.
 fromATermError :: String -> ATerm -> a
 fromATermError t u
   = error ("Cannot convert ATerm to "++t++": "++err u)
+    where err u = case u of
+		  AAppl s _ -> '!':s
+		  AList _   -> "!AList"
+		  _ -> "!AInt"
+
+fromATermError' :: String -> ATerm -> String
+fromATermError' t u = ("Cannot convert ATerm to "++t++": "++err u)
     where err u = case u of
 		  AAppl s _ -> '!':s
 		  AList _   -> "!AList"
@@ -99,12 +112,16 @@ instance {-# OVERLAPS #-} ATermConvertible String where
   toATerm s			= AAppl (show s) []
   fromATerm (AAppl s [])  	= read s
   fromATerm t			= fromATermError "Prelude.String" t
+  fromATermEither (AAppl s []) = Right $ read s
+  fromATermEither t = Left (fromATermError' "Prelude.Either" t)
 
                                                                    -- Integral
 instance {-# OVERLAPS #-} Integral n => ATermConvertible n where
   toATerm i			= AInt (toInteger i)
   fromATerm (AInt i)  		= fromInteger i
   fromATerm t			= fromATermError "Prelude.Integral" t
+  fromATermEither (AInt i)  		= Right $ fromInteger i
+  fromATermEither t			= Left $ fromATermError' "Prelude.Integral" t
 
                                                                        -- Bool
 instance ATermConvertible Bool where
@@ -113,18 +130,25 @@ instance ATermConvertible Bool where
   fromATerm (AAppl "True" [])	= True
   fromATerm (AAppl "False" [])	= False
   fromATerm t			= fromATermError "Prelude.Bool" t
+  fromATermEither (AAppl "True" [])	= Right True
+  fromATermEither (AAppl "False" [])	= Right False
+  fromATermEither t			= Left $ fromATermError' "Prelude.Bool" t
                                                                        -- Bool
 
 instance ATermConvertible () where
   toATerm ()			= AAppl "()" []
   fromATerm (AAppl "()" [])	= ()
   fromATerm t			= fromATermError "Prelude.()" t
+  fromATermEither (AAppl "()" [])	= Right ()
+  fromATermEither t			= Left $ fromATermError' "Prelude.()" t
 
                                                                        -- Char
 instance ATermConvertible Char where
   toATerm c			= AInt (toInteger . ord $ c)
   fromATerm (AInt c)		= chr . fromInteger $ c
   fromATerm t			= fromATermError "Prelude.Char" t
+  fromATermEither (AInt c)		= Right . chr . fromInteger $ c
+  fromATermEither t			= Left $ fromATermError' "Prelude.Char" t
 
                                                                       -- Ratio
 instance (Integral a, ATermConvertible a)
@@ -134,54 +158,67 @@ instance (Integral a, ATermConvertible a)
   fromATerm (AAppl "Ratio" [x,y])
 		= fromATerm x%fromATerm y
   fromATerm t	= fromATermError "Ratio.Ratio" t
+  fromATermEither (AAppl "Ratio" [x,y])
+		= Right $ fromATerm x%fromATerm y
+  fromATermEither t	= Left $ fromATermError' "Ratio.Ratio" t
 
 -----------------------------------------------------------------------------
 -- * Generic instances
 
-class GFromATermMaybe' f where
-    gfromATermMaybe' :: ATerm -> Maybe (f a)
+class GFromATermEither' f where
+    gfromATermEither' :: ATerm -> Either Error (f a)
 
-instance GFromATermMaybe' V1 where
-    gfromATermMaybe' x = case x of
+instance GFromATermEither' V1 where
+    gfromATermEither' x = case x of {}
 
-instance GFromATermMaybe' U1 where
-    gfromATermMaybe' _ = Just U1
+instance GFromATermEither' U1 where
+    gfromATermEither' _ = Right U1
 
-instance ATermConvertible c => GFromATermMaybe' (K1 i c) where
-    gfromATermMaybe' :: forall c a. ATermConvertible c => ATerm -> Maybe (K1 i c a)
-    gfromATermMaybe' x@(AAppl str xs) = Just . K1 $ fromATerm @c x
-    gfromATermMaybe' x@(AInt _) = Just . K1 $ fromATerm @c x
+instance ATermConvertible c => GFromATermEither' (K1 i c) where
+    gfromATermEither' :: forall c a. ATermConvertible c => ATerm -> Either Error (K1 i c a)
+    gfromATermEither' x@(AAppl str xs) = Right . K1 $ fromATerm @c x
+    gfromATermEither' x@(AInt _) = Right . K1 $ fromATerm @c x
+    gfromATermEither' x@(AList xs) = Right . K1 $ fromATerm @c x
 
-instance (GFromATermMaybe' f) => GFromATermMaybe' (M1 D t f) where
-    gfromATermMaybe' x = M1 <$> gfromATermMaybe' x
+instance (GFromATermEither' f) => GFromATermEither' (M1 D t f) where
+    gfromATermEither' x = M1 <$> gfromATermEither' x
 
-instance (GFromATermList' f, Constructor t) => GFromATermMaybe' (M1 C t f) where
-    gfromATermMaybe' xs@(AAppl x zs) = guard (x == conName y) *> (M1 <$> gfromATermList' zs) where
+instance (GFromATermList' f, Constructor t) => GFromATermEither' (M1 C t f) where
+    gfromATermEither' xs@(AAppl x zs) = if x == conName y then
+        M1 <$> gfromATermList' zs else
+        Left ("constructor mismatch: got " <> x <> ", want " <> conName y) where
         y :: M1 C t f a
         y = undefined
+    gfromATermEither' xs = Left ("expected AAppl, got " <> show xs)
 
-instance (GFromATermMaybe' f) => GFromATermMaybe' (M1 S t f) where
-    gfromATermMaybe' x = M1 <$> gfromATermMaybe' x
+instance (GFromATermEither' f) => GFromATermEither' (M1 S t f) where
+    gfromATermEither' x = M1 <$> gfromATermEither' x
 
-instance (GFromATermMaybe' f, GFromATermMaybe' g) => GFromATermMaybe' (f :+: g) where
-    gfromATermMaybe' x = case gfromATermMaybe' x of
-        Just x' -> Just (L1 x')
-        Nothing -> case gfromATermMaybe' x of
-            Just x' -> Just (R1 x')
-            Nothing -> Nothing
+instance (GFromATermEither' f, GFromATermEither' g) => GFromATermEither' (f :+: g) where
+    gfromATermEither' x = case gfromATermEither' x of
+        Right x' -> Right (L1 x')
+        Left err -> case gfromATermEither' x of
+            Right x' -> Right (R1 x')
+            Left err -> Left ("error in (:+:): " <> err)
 
+type Error = String
 
 class GFromATermList' f where
-    gfromATermList' :: [ATerm] -> Maybe (f a)
+    gfromATermList' :: [ATerm] -> Either Error (f a)
 
 instance GFromATermList' U1 where
-    gfromATermList' _ = Just U1
+    gfromATermList' _ = Right U1
 
-instance GFromATermMaybe' f => GFromATermList' (M1 S t f) where
-    gfromATermList' [x] = gfromATermMaybe' x
+instance GFromATermEither' f => GFromATermList' (M1 S t f) where
+    gfromATermList' [x] = gfromATermEither' x
+    gfromATermList' xxs = Left ("want singleton list, got list of length " <> show (length xxs))
 
-instance (GFromATermMaybe' f, GFromATermList' g) => GFromATermList' (f :*: g) where
-    gfromATermList' (x:xs) = (:*:) <$> gfromATermMaybe' x <*> gfromATermList' xs
+instance ATermConvertible c => GFromATermList' (K1 i c) where
+    gfromATermList' [x] = Right . K1 $ fromATerm x
+
+instance (GFromATermList' f, GFromATermList' g) => GFromATermList' (f :*: g) where
+    gfromATermList' xxs = (:*:) <$> gfromATermList' (take n xxs) <*> gfromATermList' (drop n xxs) where
+        n = length xxs `div` 2
 
 
 class GATermConvertible' f where
@@ -212,7 +249,7 @@ instance GATermListConvertible' U1 where
 instance GATermConvertible' f => GATermListConvertible' (M1 S t f) where
     gtoATermList' x = [gtoATerm' x]
 
-instance {-# OVERLAPS #-} (GATermConvertible' f, GATermListConvertible' g) => GATermListConvertible' (f :*: g) where
-    gtoATermList' (x :*: xs) = gtoATerm' x : gtoATermList' xs
+instance {-# OVERLAPS #-} (GATermListConvertible' f, GATermListConvertible' g) => GATermListConvertible' (f :*: g) where
+    gtoATermList' (x :*: y) = gtoATermList' x <> gtoATermList' y
 
 ------------------------------------------------------------------------------
